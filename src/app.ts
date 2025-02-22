@@ -7,7 +7,6 @@ import { Teacher } from "./entity/Teacher";
 import { Student } from "./entity/Student";
 
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -21,18 +20,14 @@ AppDataSource.initialize()
   })
 
 
-// Middleware
 app.use(express.json());
 
-// Default Route
 app.get("/", (req: Request, res: Response) => {
   res.send(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
 
-// Start Server
-// app.listen(PORT, () => {
-//   console.log(`Server running at http://localhost:${PORT}`);
-// });
+
+
 const token = process.env.TELEGRAM_TOKEN;
 if (!token) {
   throw new Error("Telegram Bot Token not provided!");
@@ -40,7 +35,6 @@ if (!token) {
 
 const bot = new telegramBot(token, { polling: true });
 
-// Define the command list
 const commands = [
   { command: "/start", description: "Start the bot and get command list" },
   { command: "/student", description: "Get help and usage instructions" },
@@ -49,12 +43,10 @@ const commands = [
  
 ];
 
-// Set bot commands in Telegram
 bot
   .setMyCommands(commands)
   .then(() => console.log("Commands set successfully"));
 
-// Handle /start command
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   let response = "Welcome! Here are the available commands:\n\n";
@@ -64,13 +56,12 @@ bot.onText(/\/start/, (msg) => {
   bot.sendMessage(chatId, response);
 });
 
-// Handle other commands
 bot.onText(/\/student/, async (msg) => {
   const chatId = msg.chat.id;
 
   try {
     const students = await AppDataSource.getRepository(Student).find({
-      take: 10, // Limit to 10 students
+      take: 10, 
     });
 
     if (students.length > 0) {
@@ -94,7 +85,7 @@ bot.onText(/\/teacher/, async (msg) => {
 
   try {
     const teachers = await AppDataSource.getRepository(Teacher).find({
-      take: 10, // Limit to 10 teachers
+      take: 10, 
     });
 
     if (teachers.length > 0) {

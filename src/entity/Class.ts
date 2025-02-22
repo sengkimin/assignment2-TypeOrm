@@ -12,7 +12,6 @@ export class Class {
   @Column({ name: "subject", type: "varchar", length: 100 })
   subject!: string;
 
-  // Foreign key referencing Teacher(teacher_id) with onDelete: SET NULL
   @ManyToOne(() => Teacher, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "teacher_id" })
   teacher?: Teacher;

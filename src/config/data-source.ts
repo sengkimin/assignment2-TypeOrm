@@ -20,14 +20,8 @@ export const AppDataSource = new DataSource({
   database: DB_DATABASE,
   ssl: false,
   synchronize: NODE_ENV === "dev" ? false : false,
-  //
-  //logging logs sql command on the treminal
   logging: NODE_ENV === "dev" ? false : false,
-  // entities: [`${__dirname}**/entity/*.{ts,js}`],
   entities: [entitiesPath],
-  // migrations: [`${__dirname}/**/migrations/*.{ts, js}`],
   migrations: [migrationPath],
-  //   entities: [User],
-  // migrations: [__dirname + "/migration/*.ts"],
   subscribers: [],
 });
