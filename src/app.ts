@@ -1,32 +1,22 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
-import { AppDataSource } from "./config/data-source"
+import { AppDataSource } from "./config/data-source";
 import telegramBot from "node-telegram-bot-api";
 import { DataSource } from "typeorm";
 import { Teacher } from "./entity/Teacher";
 import { Student } from "./entity/Student";
-
+import { Class } from "./entity/Class";
 
 dotenv.config();
 
 const app = express();
-AppDataSource.initialize()
-.then(()=>{
-  console.log("Data Source has been initialized")
-}
-)
-.catch((err)=>{
-  console.error("Error during Data Source initialization", err)
-  })
-
-
 app.use(express.json());
+
+const PORT = process.env.PORT || 3050;
 
 app.get("/", (req: Request, res: Response) => {
   res.send(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
-
-
 
 const token = process.env.TELEGRAM_TOKEN;
 if (!token) {
@@ -36,16 +26,13 @@ if (!token) {
 const bot = new telegramBot(token, { polling: true });
 
 const commands = [
-  { command: "/start", description: "Start the bot and get command list" },
-  { command: "/student", description: "Get help and usage instructions" },
-  { command: "/teacher", description: "Get contact information" },
-  { command: "/class", description: "See current promotions" },
- 
+  { command: "/start", description: "List available bot commands" },
+  { command: "/student", description: "Get a list of students" },
+  { command: "/teacher", description: "Get a list of teachers" },
+  { command: "/class", description: "Get a list of classes" },
 ];
 
-bot
-  .setMyCommands(commands)
-  .then(() => console.log("Commands set successfully"));
+bot.setMyCommands(commands).then(() => console.log("Commands set successfully"));
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
@@ -58,18 +45,14 @@ bot.onText(/\/start/, (msg) => {
 
 bot.onText(/\/student/, async (msg) => {
   const chatId = msg.chat.id;
-
   try {
-    const students = await AppDataSource.getRepository(Student).find({
-      take: 10, 
-    });
+    const students = await AppDataSource.getRepository(Student).find({ take: 10 });
 
     if (students.length > 0) {
-      let message = "Here are the first 10 students:\n\n";
+      let message = "Here are the students:\n\n";
       students.forEach((student, index) => {
-        message += `${index + 1}. ${student.firstName} ${student.lastName} (${student.email})\n`;
+        message += `${index + 1}. ${student.firstName} ${student.lastName}\n`;
       });
-
       bot.sendMessage(chatId, message);
     } else {
       bot.sendMessage(chatId, "No students found.");
@@ -82,18 +65,14 @@ bot.onText(/\/student/, async (msg) => {
 
 bot.onText(/\/teacher/, async (msg) => {
   const chatId = msg.chat.id;
-
   try {
-    const teachers = await AppDataSource.getRepository(Teacher).find({
-      take: 10, 
-    });
+    const teachers = await AppDataSource.getRepository(Teacher).find({ take: 10 });
 
     if (teachers.length > 0) {
-      let message = "Here are the first 10 teachers:\n\n";
+      let message = "Here are the first teachers:\n\n";
       teachers.forEach((teacher, index) => {
-        message += `${index + 1}. ${teacher.firstName} ${teacher.lastName} (${teacher.email})\n`;
+        message += `${index + 1}. ${teacher.firstName} ${teacher.lastName}\n`;
       });
-
       bot.sendMessage(chatId, message);
     } else {
       bot.sendMessage(chatId, "No teachers found.");
@@ -104,23 +83,34 @@ bot.onText(/\/teacher/, async (msg) => {
   }
 });
 
-bot.onText(/\/class/, (msg) => {
-  bot.sendMessage(
-    msg.chat.id,
-    "This bot allows you to access various features. Use /start to see available commands."
-  );
+bot.onText(/\/class/, async (msg) => {
+  const chatId = msg.chat.id;
+  try {
+    const classes = await AppDataSource.getRepository(Class).find({ take: 10 });
+
+    if (classes.length > 0) {
+      let message = "Here are the available classes:\n\n";
+      classes.forEach((cls, index) => {
+        message += `${index + 1}. ${cls.className}\n`;
+      });
+      bot.sendMessage(chatId, message);
+    } else {
+      bot.sendMessage(chatId, "No classes found.");
+    }
+  } catch (error) {
+    console.error("Error fetching classes:", error);
+    bot.sendMessage(chatId, "An error occurred while fetching class data.");
+  }
 });
 
-const PORT = process.env.PORT || 3050;
-
 AppDataSource.initialize()
-  .then(async () => {
+  .then(() => {
     console.log("Connection initialized with database...");
     app.listen(PORT, () => {
       console.log("Server is running on http://localhost:" + PORT);
     });
   })
-  .catch((error) => console.log(error));
+  .catch((error) => console.log("Database connection error:", error));
 
 export const getDataSource = (delay = 3000): Promise<DataSource> => {
   if (AppDataSource.isInitialized) return Promise.resolve(AppDataSource);
@@ -134,5 +124,3 @@ export const getDataSource = (delay = 3000): Promise<DataSource> => {
 };
 
 export default app;
-
-
